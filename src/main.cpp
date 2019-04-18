@@ -8,7 +8,7 @@ int status = WL_IDLE_STATUS;
 WiFiServer server;
 WiFiClient client;
 int moteurs = 13;
-int contacteur = 34;
+int contacteur = 23;
 int led = 35;
 String stopmessage="INTech Tech The Respect\n";
 String runmessage="Que la force soit avec toi\n";
@@ -20,21 +20,23 @@ bool arrive = false;
 
 void setup()
 {
-    delay(5000);
+    //delay(5000);
     Serial.begin(9600);
+    Serial.println("start");
     pinMode(moteurs, OUTPUT);
     digitalWrite(moteurs, LOW);
     pinMode(contacteur, INPUT_PULLUP);
     pinMode(led,OUTPUT);
     digitalWrite(led,HIGH);
-
+    Serial.println("init Wifi");
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid,pass);
     delay(100);
     WiFi.softAPConfig(IPAddress(192,168,5,1),IPAddress(192,168,5,1),IPAddress(255,255,255,0));
 
     server.begin(18900);
-
+    Serial.println("fin du setup");
+    //delay(5000);
 }
 
 void loop()
@@ -44,6 +46,7 @@ void loop()
         delay(10);
         if (digitalRead(contacteur) == LOW)
         {
+            Serial.println("Contact!");
             digitalWrite(moteurs,LOW);
             arrive = true;
         }
@@ -61,6 +64,7 @@ void loop()
     }
     if (digitalRead(contacteur) == LOW)
     {
+        Serial.println("Contact!");
         digitalWrite(moteurs,LOW);
         arrive = true;
     }
