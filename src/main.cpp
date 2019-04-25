@@ -2,32 +2,46 @@
 #include <WiFi.h>
 #include <SPI.h>
 
+
+/////////////////CONFIG WIFI///////////////////////
 char ssid[] = "INTech2";
 char pass[] = "$0P@L1Z7";
 int status = WL_IDLE_STATUS;
 WiFiServer server;
 WiFiClient client;
+
+
+///////////////////GPIO///////////////////////////
 int moteurs = 13;
 int contacteur = 23;
 int led = 35;
+const int PWMfreq = 5000;
+const int PWMChannel = 0;
+const int PWMresolution = 8;
+
+//////////////MESSAGES//////////////////////////
 String stopmessage="INTech Tech The Respect\n";
 String runmessage="Que la force soit avec toi\n";
 String arretedecrire="A";
-bool test = true;
-String message;
+
+
+///////////ETATS DE L'ELECTRON///////////////
 bool moteuractive = false;
 bool arrive = false;
+
 
 void setup()
 {
     //delay(5000);
     Serial.begin(9600);
     Serial.println("start");
+    ledcSetup(PWMChannel, PWMfreq, PWMresolution);
+    pinMode(led,OUTPUT);
+    ledcAttachPin(led, PWMChannel);
     pinMode(moteurs, OUTPUT);
     digitalWrite(moteurs, LOW);
     pinMode(contacteur, INPUT_PULLUP);
-    pinMode(led,OUTPUT);
-    digitalWrite(led,HIGH);
+    ledcWrite(led,127);
     Serial.println("init Wifi");
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid,pass);
@@ -41,6 +55,7 @@ void setup()
 
 void loop()
 {
+    ledcWrite(led, 255);
     while (!client) {
         client = server.available();
         delay(10);
@@ -51,21 +66,26 @@ void loop()
             arrive = true;
         }
 
-    }
-    message = client.readString();
-    if (message == "electron_launch"){
-        if (!moteuractive) {
-            digitalWrite(moteurs, HIGH);
-            moteuractive = true;
+    }ledcWrite(led, 0);
+    if(client.available()) {
+        if (client.readString() == "electron_launch") {
+            ledcWrite(led, 255);
+            delay(200);
+            ledcWrite(led, 0);
+            if (!moteuractive) {
+                digitalWrite(moteurs, HIGH);
+                moteuractive = true;
+            }
+            client.print("@Belectron_activated\n");
+
+
         }
-        client.print("@Belectron_activated\n");
-
-
     }
     if (digitalRead(contacteur) == LOW)
     {
         Serial.println("Contact!");
         digitalWrite(moteurs,LOW);
+        ledcWrite(led, 127);
         arrive = true;
     }
     if (arrive) {
