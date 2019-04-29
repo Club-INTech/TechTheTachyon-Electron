@@ -14,9 +14,9 @@ WiFiClient client;
 ///////////////////GPIO///////////////////////////
 int moteurs = 13;
 int contacteur = 23;
-int led = 35;
-const int PWMfreq = 5000;
-const int PWMChannel = 0;
+int led = 22;
+const int PWMfreq = 1000;
+const int PWMChannel = 1;
 const int PWMresolution = 8;
 
 //////////////MESSAGES//////////////////////////
@@ -29,6 +29,9 @@ String arretedecrire="A";
 bool moteuractive = false;
 bool arrive = false;
 
+void arriver(){
+    arrive=
+}
 
 void setup()
 {
@@ -36,12 +39,11 @@ void setup()
     Serial.begin(9600);
     Serial.println("start");
     ledcSetup(PWMChannel, PWMfreq, PWMresolution);
-    pinMode(led,OUTPUT);
     ledcAttachPin(led, PWMChannel);
     pinMode(moteurs, OUTPUT);
     digitalWrite(moteurs, LOW);
     pinMode(contacteur, INPUT_PULLUP);
-    ledcWrite(led,127);
+    ledcWrite(PWMChannel,127);
     Serial.println("init Wifi");
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid,pass);
@@ -55,8 +57,9 @@ void setup()
 
 void loop()
 {
-    ledcWrite(led, 255);
+    ledcWrite(PWMChannel, 255);
     while (!client) {
+        //Serial.println("attente client");
         client = server.available();
         delay(10);
         if (digitalRead(contacteur) == LOW)
@@ -64,14 +67,15 @@ void loop()
             Serial.println("Contact!");
             digitalWrite(moteurs,LOW);
             arrive = true;
+            ledcWrite(PWMChannel, 0);
         }
 
-    }ledcWrite(led, 0);
+    }
     if(client.available()) {
         if (client.readString() == "electron_launch") {
-            ledcWrite(led, 255);
+            ledcWrite(PWMChannel, 255);
             delay(200);
-            ledcWrite(led, 0);
+            ledcWrite(PWMChannel, 0);
             if (!moteuractive) {
                 digitalWrite(moteurs, HIGH);
                 moteuractive = true;
@@ -85,7 +89,7 @@ void loop()
     {
         Serial.println("Contact!");
         digitalWrite(moteurs,LOW);
-        ledcWrite(led, 127);
+        ledcWrite(PWMChannel, 127);
         arrive = true;
     }
     if (arrive) {
