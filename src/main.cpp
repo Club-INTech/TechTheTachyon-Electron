@@ -4,17 +4,18 @@
 
 
 /////////////////CONFIG WIFI///////////////////////
-char ssid[] = "INTech2";
-char pass[] = "$0P@L1Z7";
-int status = WL_IDLE_STATUS;
-WiFiServer server;
+const char ssid[] = "nucsamere";
+//const char pass[] = "$0P@L1Z7";
+const char pass[]= "suussuus";
+const byte serverAdress[] = {192, 168, 12, 1};
+const int serverPort=80;
 WiFiClient client;
 
 
 ///////////////////GPIO///////////////////////////
 int moteurs = 13;
-int contacteur = 23;
-int led = 22;
+int contacteur = 32;
+int led = 33;
 const int PWMfreq = 1000;
 const int PWMChannel = 1;
 const int PWMresolution = 8;
@@ -30,7 +31,10 @@ bool moteuractive = false;
 bool arrive = false;
 
 void arriver(){
-    arrive=
+    arrive=true;
+    digitalWrite(moteurs, LOW);
+    ledcWrite(PWMChannel, 0);
+    Serial.println("Contact");
 }
 
 void setup()
@@ -43,14 +47,22 @@ void setup()
     pinMode(moteurs, OUTPUT);
     digitalWrite(moteurs, LOW);
     pinMode(contacteur, INPUT_PULLUP);
-    ledcWrite(PWMChannel,127);
+    attachInterrupt(digitalPinToInterrupt(contacteur), arriver, FALLING);
+    ledcWrite(PWMChannel,100);
     Serial.println("init Wifi");
+    /*
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid,pass);
-    delay(100);
     WiFi.softAPConfig(IPAddress(192,168,5,1),IPAddress(192,168,5,1),IPAddress(255,255,255,0));
+    */
+    WiFi.begin(ssid, pass);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Establishing connection to WiFi..");
+    }
+    Serial.println("Connecté avec l'adresse "+WiFi.localIP().toString());
 
-    server.begin(18900);
+    Serial.println(client.connect(serverAdress, serverPort));
     Serial.println("fin du setup");
     //delay(5000);
 }
@@ -58,95 +70,25 @@ void setup()
 void loop()
 {
     ledcWrite(PWMChannel, 255);
-    while (!client) {
-        //Serial.println("attente client");
-        client = server.available();
+    //Serial.println(WiFi.status());
+    while (WiFi.status()!=WL_CONNECTED ){//&& !client.connect(serverAdress,serverPort)){
+        Serial.println("attente connection serveur");
         delay(10);
-        if (digitalRead(contacteur) == LOW)
-        {
-            Serial.println("Contact!");
-            digitalWrite(moteurs,LOW);
-            arrive = true;
-            ledcWrite(PWMChannel, 0);
-        }
-
     }
+    client.println("ready");
     if(client.available()) {
         if (client.readString() == "electron_launch") {
             ledcWrite(PWMChannel, 255);
             delay(200);
-            ledcWrite(PWMChannel, 0);
+            ledcWrite(PWMChannel, 100);
             if (!moteuractive) {
                 digitalWrite(moteurs, HIGH);
                 moteuractive = true;
             }
             client.print("@Belectron_activated\n");
-
-
         }
-    }
-    if (digitalRead(contacteur) == LOW)
-    {
-        Serial.println("Contact!");
-        digitalWrite(moteurs,LOW);
-        ledcWrite(PWMChannel, 127);
-        arrive = true;
     }
     if (arrive) {
         client.print("@Belectron_arrived\n");
     }
 }
-
-/*
-void setup() {
-    delay(5000);
-    Serial.begin(9600);
-    pinMode(moteurs,OUTPUT);
-    digitalWrite(moteurs,LOW);
-    pinMode(contacteur, INPUT_PULLDOWN);
-
-    WiFi.softAP(ssid, pass);
-    IPAddress IP = WiFi.softAPIP();
-    server.begin();
-    Serial.print("IP du serveur : ");
-    Serial.println(IP);
-}
-
-void loop() {
-    client = server.available();
-    if ( client ) {
-        while (true) {
-            if (digitalRead(contacteur) == LOW) {
-                delay(100);
-                if (digitalRead(contacteur) == LOW) {
-                    digitalWrite(moteurs, LOW);
-                    Serial.println("Vous ne passerez pas");
-                    while (true) {
-                        delay(1000);
-                        Serial.println("Connecté au copain");
-                        client.print(arretedecrire);
-                        Serial.println(arretedecrire);
-                        delay(4000);
-                    }
-                }
-            }
-            if (client.connected() & test) {
-                Serial.println("client send a message");
-                delay(100)
-;                String message = client.readString();
-                if (message == runmessage) {
-                    Serial.println("Vers l'infini et au delà");
-                    digitalWrite(moteurs, HIGH);
-                    test=false;
-                } else if (message == stopmessage) {
-                    Serial.println("STOP");
-                    digitalWrite(moteurs, LOW);
-                } else {
-                    Serial.println("j'ai reçu du caca");
-                }
-            }
-        }
-    }
-
-}
- */
