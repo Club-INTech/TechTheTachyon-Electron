@@ -7,9 +7,10 @@
 const char ssid[] = "nucsamere";
 //const char pass[] = "$0P@L1Z7";
 const char pass[]= "suussuus";
-const byte serverAdress[] = {192, 168, 12, 1};
-const int serverPort=80;
+//const byte serverAdress[] = {192, 168, 12, 247};
+const int serverPort=18900;
 WiFiClient client;
+WiFiServer server(serverPort);
 
 
 ///////////////////GPIO///////////////////////////
@@ -56,13 +57,13 @@ void setup()
     WiFi.softAPConfig(IPAddress(192,168,5,1),IPAddress(192,168,5,1),IPAddress(255,255,255,0));
     */
     WiFi.begin(ssid, pass);
+    server.begin(serverPort);
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         Serial.println("Establishing connection to WiFi..");
     }
     Serial.println("Connecté avec l'adresse "+WiFi.localIP().toString());
-
-    Serial.println(client.connect(serverAdress, serverPort));
+    Serial.println("MAC:"+WiFi.macAddress());
     Serial.println("fin du setup");
     //delay(5000);
 }
@@ -71,13 +72,18 @@ void loop()
 {
     ledcWrite(PWMChannel, 255);
     //Serial.println(WiFi.status());
-    while (WiFi.status()!=WL_CONNECTED ){//&& !client.connect(serverAdress,serverPort)){
-        Serial.println("attente connection serveur");
-        delay(10);
+    while ( ! client) {
+        //Serial.println("attente client");
+        client = server.available();
+        delay(100);
     }
-    client.println("ready");
-    if(client.available()) {
-        if (client.readString() == "electron_launch") {
+    Serial.println("Connecté à "+client.remoteIP().toString());
+    delay(100);
+    Serial.println(client.available());
+    if(client.available()>0) {
+        String data=client.readStringUntil('\n');
+        if (data.equals("electron_launch")) {
+            Serial.println("electron activated");
             ledcWrite(PWMChannel, 255);
             delay(200);
             ledcWrite(PWMChannel, 100);
@@ -86,9 +92,15 @@ void loop()
                 moteuractive = true;
             }
             client.print("@Belectron_activated\n");
+        }else{
+            Serial.println("Recu message inattendu: "+data);
         }
+    } else{
+        Serial.println("Rien recu");
     }
+
     if (arrive) {
         client.print("@Belectron_arrived\n");
+
     }
 }
