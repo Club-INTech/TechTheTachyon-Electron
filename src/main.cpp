@@ -29,6 +29,7 @@ String arretedecrire="A";
 ///////////ETATS DE L'ELECTRON///////////////
 bool moteuractive = false;
 bool arrive = false;
+bool launched = false;
 
 void arriver(){
     arrive=true;
@@ -83,21 +84,26 @@ void loop()
         if (data.equals("electron_launch")) {
             Serial.println("electron activated");
             client.print("@Belectron_activated\n");
+            launched = true;
         } else {
             Serial.println("Recu message inattendu: "+data);
         }
     }
 
-    if (!moteuractive) {
-        digitalWrite(moteurs, HIGH);
-        moteuractive = true;
+    if(launched) {
+        if (!moteuractive) {
+            digitalWrite(moteurs, HIGH);
+            moteuractive = true;
+        }
     }
 
     if (arrive) {
         ledcWrite(PWMChannel, 100);
         client.print("@Belectron_arrived\n");
     } else {
-        ledcWrite(PWMChannel, 255);
+        if(launched) {
+            ledcWrite(PWMChannel, 255);
+        }
     }
     delay(100);
 }
