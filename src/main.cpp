@@ -32,9 +32,11 @@ bool arrive = false;
 bool launched = false;
 
 void arriver(){
-    arrive=true;
-    digitalWrite(moteurs, LOW);
-    ledcWrite(PWMChannel, 0);
+    if(launched) { //Si on n'appuie pas sur le contacteur par erreur avant le début du match
+        arrive = true;
+        digitalWrite(moteurs, LOW);
+        ledcWrite(PWMChannel, 0);
+    }
     Serial.println("Contact");
 }
 
