@@ -29,7 +29,6 @@ String arretedecrire="A";
 
 
 ///////////ETATS DE L'ELECTRON///////////////
-bool moteuractive = false;
 volatile bool arrive = false;
 bool launched = false;
 
@@ -40,7 +39,6 @@ void arriver(){
     if(launched) { //Si on n'appuie pas sur le contacteur par erreur avant le début du match
         arrive = true;
         ledcWrite(motorChannel, 0);
-        motorValue=256;
         //digitalWrite(moteurs, LOW);
         ledcWrite(ledChannel, 0);
     }
@@ -112,18 +110,13 @@ void loop()
     }
     //*/
 
-    if(launched) {
-        if (!moteuractive) {
-            //digitalWrite(moteurs, HIGH);
-            moteuractive = true;
-        }
-        if(motorValue<=255) {
+    if(launched && !arrive) {
+        if(motorValue<255){
             motorValue+=10;
-            if(motorValue>255){
-                motorValue=255;
-            }
-            ledcWrite(motorChannel, motorValue);
+        }else{
+            motorValue=255;
         }
+        ledcWrite(motorChannel, motorValue);
     }
 
     Serial.println("MotorValue: "+(String)motorValue);
