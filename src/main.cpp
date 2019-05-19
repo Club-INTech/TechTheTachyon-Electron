@@ -27,9 +27,22 @@ String stopmessage="INTech Tech The Respect\n";
 String runmessage="Que la force soit avec toi\n";
 String arretedecrire="A";
 
+///////////Etats de la led/////////////////////
+///                                         ///
+///       Connexion au WiFi 0.5             ///
+///                          \/             ///
+///  Connection d'un client 1.0             ///
+///                          \/             ///
+/// Activation du moteur clignotement       ///
+///                          \/             ///
+///         Electron arrivé 0.0             ///
+///                                         ///
+///////////////////////////////////////////////
 
 ///////////ETATS DE L'ELECTRON///////////////
 volatile bool arrive = false;
+long lastBlinkTime=0;
+bool blink=false;
 bool launched = false;
 
 void arriver(){
@@ -41,6 +54,18 @@ void arriver(){
         ledcWrite(motorChannel, 0);
         //digitalWrite(moteurs, LOW);
         ledcWrite(ledChannel, 0);
+    }
+}
+
+void clignote(){
+    if(millis()-lastBlinkTime>500){
+        if(blink) {
+            ledcWrite(ledChannel, 0);
+        } else{
+            ledcWrite(ledChannel, 255);
+        }
+        blink=!blink;
+        lastBlinkTime=millis();
     }
 }
 
@@ -60,7 +85,6 @@ void setup()
     //digitalWrite(moteurs, LOW);
     pinMode(contacteur, INPUT_PULLUP);
     //attachInterrupt(digitalPinToInterrupt(contacteur), arriver, FALLING);
-    ledcWrite(ledChannel,100);
     ledcWrite(motorChannel, 0);
     Serial.println("init Wifi");
 
@@ -70,6 +94,7 @@ void setup()
         Serial.println("Establishing connection to WiFi..");
     }
     server.begin();
+    ledcWrite(ledChannel,100);
     Serial.println("Connecté avec l'adresse "+WiFi.localIP().toString());
     Serial.println("MAC:"+WiFi.macAddress());
     Serial.println("fin du setup");
@@ -78,7 +103,6 @@ void setup()
 
 void loop()
 {
-    ledcWrite(ledChannel, 255);
     //Serial.println(WiFi.status());
     digitalWrite(BLUE_LED, HIGH);
     boolean hadClient=client;
@@ -89,6 +113,7 @@ void loop()
     if(!hadClient) {
         Serial.println("Client à l'dresse: "+client.remoteIP().toString());
         client.println("Bienvenue à toi, l'ami");
+        ledcWrite(ledChannel, 255);
     }
     digitalWrite(BLUE_LED, HIGH);
     int toRead=client.available();
@@ -117,16 +142,12 @@ void loop()
             motorValue=255;
         }
         ledcWrite(motorChannel, motorValue);
+        clignote();
     }
 
-    Serial.println("MotorValue: "+(String)motorValue);
+    //Serial.println("MotorValue: "+(String)motorValue);
 
     if (arrive) {
-        ledcWrite(ledChannel, 100);
         client.print("@Belectron_arrived\n");
-    } else {
-        if (launched) {
-            ledcWrite(ledChannel, 255);
-        }
     }
 }
