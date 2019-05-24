@@ -4,7 +4,13 @@
 
 
 /////////////////CONFIG WIFI///////////////////////
-const char ssid[] = "nucsamere";
+// Set your Static IP address
+IPAddress local_IP(192, 168, 42, 69);
+// Set your Gateway IP address
+IPAddress gateway(192, 168, 42, 69);
+
+IPAddress subnet(255, 255, 255, 0);
+const char ssid[] = "intech_electron_ap";
 const char pass[]= "suussuus";
 const int serverPort=18900;
 WiFiClient client;
@@ -88,11 +94,12 @@ void setup()
     ledcWrite(motorChannel, 0);
     Serial.println("init Wifi");
 
-    WiFi.begin(ssid, pass);
-    while (WiFi.status() != WL_CONNECTED) {
+    WiFi.softAPConfig(local_IP, gateway, subnet);
+    WiFi.softAP(ssid, pass);
+   /* while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         Serial.println("Establishing connection to WiFi..");
-    }
+    }*/
     server.begin();
     ledcWrite(ledChannel,100);
     Serial.println("Connecté avec l'adresse "+WiFi.localIP().toString());
@@ -111,9 +118,12 @@ void loop()
     }
 
     if(!hadClient) {
-        Serial.println("Client à l'dresse: "+client.remoteIP().toString());
-        client.println("Bienvenue à toi, l'ami");
-        ledcWrite(ledChannel, 255);
+        const IPAddress &ip = client.remoteIP();
+        if(ip[0] == 192) {
+            Serial.println("Client à l'adresse: " + ip.toString());
+            client.println("Bienvenue à toi, l'ami");
+            ledcWrite(ledChannel, 255);
+        }
     }
     digitalWrite(BLUE_LED, HIGH);
     int toRead=client.available();
